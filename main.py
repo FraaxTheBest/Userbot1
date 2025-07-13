@@ -397,7 +397,7 @@ async def set_message(event):
         await event.respond(f"✅ Impostati {len(group_messages)} messaggi specifici per gruppi.")
         return
 
-  if '//' in text:
+if '//' in text:
     spam_messages_random = [msg.strip() for msg in text.split('//')]
     spam_message = None
     group_messages = {}
