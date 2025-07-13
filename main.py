@@ -72,7 +72,7 @@ async def send_spam():
             if not is_spamming:
                 break
 
- try:
+try:
     # Ottieni il gruppo attuale
     entity = await client.get_entity(group_id)
     next_group_name = getattr(entity, 'title', str(group_id))
@@ -105,12 +105,12 @@ async def send_spam():
 
     next_spam_in = delay  # Salva il tempo per .status
 
+    # Aspetta il delay
     await asyncio.sleep(delay)
 
 except Exception as e:
     print(f"❌ Errore su {group_id}: {e}")
     continue
-
 
 # Invia il messaggio (con media o solo testo)
 if media_path and os.path.exists(media_path):
