@@ -286,6 +286,8 @@ async def stop_spam(event):
 async def scan_all_groups(event):
     global spam_groups
     try:
+        MAX_MESSAGE_LENGTH = 4000  # ✅ Qui va bene!
+
         dialogs = await client.get_dialogs()
         added_groups = []
 
@@ -304,9 +306,12 @@ async def scan_all_groups(event):
             json.dump(config, f, indent=4)
 
         if added_groups:
-            await event.respond(f"✅ Aggiunti {len(added_groups)} gruppi alla lista spam:\n\n" + "\n".join(added_groups))
+            response = f"✅ Aggiunti {len(added_groups)} gruppi alla lista spam:\n\n" + "\n".join(added_groups)
+            for i in range(0, len(response), MAX_MESSAGE_LENGTH):
+                await event.respond(response[i:i + MAX_MESSAGE_LENGTH])
         else:
             await event.respond("⚠ Nessun nuovo gruppo trovato o già tutti presenti nella lista.")
+
     except Exception as e:
         await event.respond(f"Errore durante la scansione dei gruppi: {str(e)}")
 
@@ -334,6 +339,7 @@ async def set_random_interval(event):
 @client.on(events.NewMessage(pattern=r'\.listallids'))
 async def list_all_group_ids(event):
     try:
+        MAX_MESSAGE_LENGTH = 4000  # <-- INDENTAZIONE CORRETTA QUI
         dialogs = await client.get_dialogs()
         groups_info = []
 
@@ -345,15 +351,16 @@ async def list_all_group_ids(event):
 
         if groups_info:
             response = "📋 *Lista di tutti i gruppi dove sei dentro:*\n\n" + "\n".join(groups_info)
+            if len(response) > MAX_MESSAGE_LENGTH:
+                # Spezzetta e manda a blocchi
+                for i in range(0, len(response), MAX_MESSAGE_LENGTH):
+                    await event.respond(response[i:i+MAX_MESSAGE_LENGTH])
+            else:
+                await event.respond(response)
         else:
-            response = "❌ Non sei dentro a nessun gruppo."
-
-      MAX_MESSAGE_LENGTH = 4000
-if len(response) > MAX_MESSAGE_LENGTH:
-    for i in range(0, len(response), MAX_MESSAGE_LENGTH):
-        await event.respond(response[i:i + MAX_MESSAGE_LENGTH])
-else:
-    await event.respond(response)
+            await event.respond("❌ Non sei dentro a nessun gruppo.")
+    except Exception as e:
+        await event.respond(f"Errore durante il recupero dei gruppi: {str(e)}")
 
 @client.on(events.NewMessage(pattern=r'\.setmsg\s+(.+)', func=lambda e: not e.is_reply))
 async def set_message(event):
