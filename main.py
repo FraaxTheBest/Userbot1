@@ -398,17 +398,20 @@ async def set_message(event):
         return
 
     if '//' in text:
-        spam_messages_random = [msg.strip() for msg in text.split('//')]
-        spam_message = None
-        group_messages = {}
-        await event.respond(f"✅ Impostati {len(spam_messages_random)} messaggi random.")
-    else:
-        spam_message = text.strip()
-        spam_messages_random = None
-        group_messages = {}
-        await event.respond("✅ Messaggio singolo impostato correttamente.")
+    spam_messages_random = [msg.strip() for msg in text.split('//')]
+    spam_message = None
+    group_messages = {}
+    media_path = None
+    await event.respond(f"✅ Impostati {len(spam_messages_random)} messaggi random.")
+else:
+    spam_message = text.strip()
+    spam_messages_random = None
+    group_messages = {}
 
-    media_path = None  # Reset media se cambi messaggio
+    if media_path:
+        await event.respond("✅ Messaggio con media impostato.")
+    else:
+        await event.respond("✅ Messaggio singolo impostato correttamente.")
 
 @client.on(events.NewMessage(pattern=r'\.setmsg', func=lambda e: e.is_reply))
 async def set_message_with_media(event):
