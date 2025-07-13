@@ -348,9 +348,12 @@ async def list_all_group_ids(event):
         else:
             response = "❌ Non sei dentro a nessun gruppo."
 
-        await event.respond(response)
-    except Exception as e:
-        await event.respond(f"Errore durante il recupero dei gruppi: {str(e)}")
+      MAX_MESSAGE_LENGTH = 4000
+if len(response) > MAX_MESSAGE_LENGTH:
+    for i in range(0, len(response), MAX_MESSAGE_LENGTH):
+        await event.respond(response[i:i + MAX_MESSAGE_LENGTH])
+else:
+    await event.respond(response)
 
 @client.on(events.NewMessage(pattern=r'\.setmsg\s+(.+)', func=lambda e: not e.is_reply))
 async def set_message(event):
