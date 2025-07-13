@@ -4,12 +4,11 @@ import random
 from datetime import datetime, time
 from telethon import TelegramClient, events
 
-# --- CLIENT SETUP ---
-# Attenzione: metti API_ID, API_HASH, PHONE, PASSWORD nel .env e caricali qui
-API_ID = int(os.getenv("API_ID", "123456"))
-API_HASH = os.getenv("API_HASH", "your_api_hash")
-PHONE = os.getenv("PHONE", "tuo_numero_telefono")
-PASSWORD = os.getenv("PASSWORD", None)
+# Parametri di autenticazione (prendi da variabili d'ambiente)
+API_ID = os.getenv('API_ID')
+API_HASH = os.getenv('API_HASH')
+PHONE = os.getenv('PHONE')
+PASSWORD = os.getenv('PASSWORD')
 
 client = TelegramClient('userbot', API_ID, API_HASH)
 
