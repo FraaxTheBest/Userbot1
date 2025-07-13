@@ -77,7 +77,7 @@ async def send_spam():
                 entity = await client.get_entity(group_id)
                 next_group_name = getattr(entity, 'title', str(group_id))
 
-                # Scegli messaggio per gruppo specifico
+                # Scegli messaggio
                 if str(group_id) in group_messages:
                     message = group_messages[str(group_id)]
                 elif spam_messages_random:
@@ -89,7 +89,7 @@ async def send_spam():
                     is_spamming = False
                     break
 
-                # Invia il messaggio (con media o solo testo)
+                # Invia messaggio con o senza media
                 if media_path and os.path.exists(media_path):
                     await client.send_file(group_id, media_path, caption=message)
                 else:
@@ -97,60 +97,16 @@ async def send_spam():
 
                 print(f"✅ Messaggio inviato a {next_group_name}")
 
-                # Calcola delay random
-                if min_delay and max_delay:
-                    delay = random.randint(min_delay, max_delay)
-                else:
-                    delay = 60  # Default 1 minuto
+                # Calcola delay
+                delay = random.randint(min_delay, max_delay) if min_delay and max_delay else 60
+                next_spam_in = delay
 
-                next_spam_in = delay  # Salva il tempo per .status
-
-                # Aspetta il delay
                 await asyncio.sleep(delay)
 
             except Exception as e:
                 print(f"❌ Errore su {group_id}: {e}")
                 continue
 
-    # Invia il messaggio (con media o solo testo)
-    if media_path and os.path.exists(media_path):
-        await client.send_file(group_id, media_path, caption=message)
-    else:
-        await client.send_message(group_id, message)
-
-    print(f"✅ Messaggio inviato a {next_group_name}")
-
-    # Calcola delay random
-    if min_delay and max_delay:
-        delay = random.randint(min_delay, max_delay)
-    else:
-        delay = 60  # Default 1 minuto
-
-    next_spam_in = delay  # Salva il tempo per .status
-
-    await client.send_file(group_id, media_path, caption=message)
-else:
-    await client.send_message(group_id, message)
-
-
-                # Invia il messaggio
-                await client.send_message(group_id, message)
-                print(f"✅ Messaggio inviato a {next_group_name}")
-
-                # Calcola delay random
-                if min_delay and max_delay:
-                    delay = random.randint(min_delay, max_delay)
-                else:
-                    delay = 60  # Default 1 minuto
-
-                next_spam_in = delay  # Salva il tempo per .status
-
-                # Aspetta il delay
-                await asyncio.sleep(delay)
-
-            except Exception as e:
-                print(f"❌ Errore su {group_id}: {e}")
-                continue
 
 # Aggiungi il comando .status per mostrare lo stato
 @client.on(events.NewMessage(pattern=r'\.status'))
