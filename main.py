@@ -379,39 +379,71 @@ async def list_all_group_ids(event):
 async def set_message(event):
     global spam_message, spam_messages_random, media_path, group_messages
 
-    text = event.pattern_match.group(1)
+    text = event.pattern_match.group(1).strip()
 
-    # Supporto a messaggi specifici per gruppi → id1::msg1 || id2::msg2
+    # Messaggi specifici per gruppi (id::msg || id2::msg2)
     if "::" in text and "||" in text:
         parts = [p.strip() for p in text.split("||")]
+        group_messages = {}
         for part in parts:
             if "::" in part:
                 gid, msg = part.split("::", 1)
                 group_messages[gid.strip()] = msg.strip()
+
         spam_message = None
         spam_messages_random = None
-        # Nuove funzionalità  
-        media_path = None  # Path al file media (foto/video)
-        group_messages = {}  # Messaggi specifici per gruppo {group_id: msg}
+        media_path = None
 
         await event.respond(f"✅ Impostati {len(group_messages)} messaggi specifici per gruppi.")
         return
 
-if '//' in text:
-    spam_messages_random = [msg.strip() for msg in text.split('//')]
-    spam_message = None
+    # Messaggi random (divisi da //)
+    if '//' in text:
+        spam_messages_random = [msg.strip() for msg in text.split('//')]
+        spam_message = None
+        group_messages = {}
+        media_path = None
+
+        # Calcolo totale righe (somma righe per ogni messaggio)
+        total_lines = sum(msg.count('\n') + 1 for msg in spam_messages_random)
+        await event.respond(f"✅ Impostati {len(spam_messages_random)} messaggi random.\n🧾 Totale righe (sommate): {total_lines}")
+        return
+
+    # Messaggio singolo
+    spam_message = text
+    spam_messages_random = None
     group_messages = {}
     media_path = None
-    await event.respond(f"✅ Impostati {len(spam_messages_random)} messaggi random.")
-else:
-    spam_message = text.strip()
+
+    lines = spam_message.count('\n') + 1
+    await event.respond(f"✅ Messaggio singolo impostato correttamente.\n🧾 Righe: {lines}")
+
+
+@client.on(events.NewMessage(pattern=r'\.setmsg', func=lambda e: e.is_reply))
+async def set_message_with_media(event):
+    global spam_message, spam_messages_random, media_path, group_messages
+
+    replied = await event.get_reply_message()
+
+    if not replied:
+        await event.respond("⚠ Devi rispondere a un messaggio con media o testo.")
+        return
+
+    if replied.media:
+        file = await replied.download_media()
+        media_path = file
+        spam_message = replied.message or ""
+        media_type = "CON media"
+    else:
+        spam_message = replied.message or ""
+        media_path = None
+        media_type = "di TESTO"
+
     spam_messages_random = None
     group_messages = {}
 
-    if media_path:
-        await event.respond("✅ Messaggio con media impostato.")
-    else:
-        await event.respond("✅ Messaggio singolo impostato correttamente.")
+    lines = spam_message.count('\n') + 1 if spam_message else 0
+    await event.respond(f"✅ Messaggio {media_type} impostato.\n🎯 Modalità: SINGOLO\n🧾 Righe: {lines}")
 
 @client.on(events.NewMessage(pattern=r'\.setmsg', func=lambda e: e.is_reply))
 async def set_message_with_media(event):
