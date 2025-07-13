@@ -375,7 +375,7 @@ async def list_all_group_ids(event):
     except Exception as e:
         await event.respond(f"Errore durante il recupero dei gruppi: {str(e)}")
 
-@client.on(events.NewMessage(pattern=r'\.setmsg\s+(.+)', func=lambda e: not e.is_reply))
+@client.on(events.NewMessage(pattern=r'\.setmsg\s+([\s\S]+)', func=lambda e: not e.is_reply))
 async def set_message(event):
     global spam_message, spam_messages_random, media_path, group_messages
 
