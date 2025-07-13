@@ -251,21 +251,34 @@ async def show_help(event):
     )
     await event.respond(help_text)
 
-@client.on(events.NewMessage(pattern=r'\.listchat'))
+@client.on(events.NewMessage(pattern=r'\.listchats'))
 async def list_chats(event):
-    if not spam_groups:
-        await event.respond("❌ Nessun gruppo configurato nella lista spam.")
-        return
+    try:
+        dialogs = await client.get_dialogs()
+        lines = []
 
-    chat_details = []
-    for chat_id in spam_groups:
-        try:
-            chat = await client.get_entity(chat_id)
-            chat_details.append(f"📌 {chat.title} - {chat_id}")
-        except Exception as e:
-            chat_details.append(f"❌ Gruppo sconosciuto - {chat_id} (Errore: {str(e)})")
+        for dialog in dialogs:
+            if dialog.is_group or dialog.is_channel:
+                lines.append(f"{dialog.name} ({dialog.id})")
 
-    await event.respond("📋 Gruppi configurati:\n" + "\n".join(chat_details))
+        if not lines:
+            await event.respond("❌ Nessun gruppo o canale trovato.")
+            return
+
+        MAX_MESSAGE_LENGTH = 4000
+        message = ""
+
+        for line in lines:
+            if len(message) + len(line) + 1 > MAX_MESSAGE_LENGTH:  # +1 per il newline
+                await event.respond(message)
+                message = ""
+            message += line + "\n"
+
+        if message:
+            await event.respond(message)
+
+    except Exception as e:
+        await event.respond(f"❌ Errore durante la lista dei gruppi: {str(e)}")
     
 
 @client.on(events.NewMessage(pattern=r'\.start'))
