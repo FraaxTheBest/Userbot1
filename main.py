@@ -7,6 +7,8 @@ from telethon.errors import FloodWaitError
 from telethon.tl.types import Channel
 from telethon.tl.functions.messages import GetDialogFiltersRequest
 from dotenv import load_dotenv
+group_messages = {}
+media_path = None
 
 # Carica variabili d'ambiente dal file .env
 load_dotenv()
@@ -70,22 +72,45 @@ async def send_spam():
             if not is_spamming:
                 break
 
-            try:
-                # Ottieni il gruppo attuale
-                entity = await client.get_entity(group_id)
-                next_group_name = getattr(entity, 'title', str(group_id))
+ try:
+    # Ottieni il gruppo attuale
+    entity = await client.get_entity(group_id)
+    next_group_name = getattr(entity, 'title', str(group_id))
 
-  # Scegli messaggio per gruppo specifico
-if str(group_id) in group_messages:
-    message = group_messages[str(group_id)]
-elif spam_messages_random:
-    message = random.choice(spam_messages_random)
-elif spam_message:
-    message = spam_message
-else:
-    print("⚠ Nessun messaggio impostato. Fermando spam.")
-    is_spamming = False
-    break
+    # Scegli messaggio per gruppo specifico
+    if str(group_id) in group_messages:
+        message = group_messages[str(group_id)]
+    elif spam_messages_random:
+        message = random.choice(spam_messages_random)
+    elif spam_message:
+        message = spam_message
+    else:
+        print("⚠ Nessun messaggio impostato. Fermando spam.")
+        is_spamming = False
+        break
+
+    # Invia il messaggio (con media o solo testo)
+    if media_path and os.path.exists(media_path):
+        await client.send_file(group_id, media_path, caption=message)
+    else:
+        await client.send_message(group_id, message)
+
+    print(f"✅ Messaggio inviato a {next_group_name}")
+
+    # Calcola delay random
+    if min_delay and max_delay:
+        delay = random.randint(min_delay, max_delay)
+    else:
+        delay = 60  # Default 1 minuto
+
+    next_spam_in = delay  # Salva il tempo per .status
+
+    await asyncio.sleep(delay)
+
+except Exception as e:
+    print(f"❌ Errore su {group_id}: {e}")
+    continue
+
 
 # Invia il messaggio (con media o solo testo)
 if media_path and os.path.exists(media_path):
