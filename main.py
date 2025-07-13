@@ -7,8 +7,6 @@ from telethon.errors import FloodWaitError
 from telethon.tl.types import Channel
 from telethon.tl.functions.messages import GetDialogFiltersRequest
 from dotenv import load_dotenv
-group_messages = {}
-media_path = None
 
 # Carica variabili d'ambiente dal file .env
 load_dotenv()
@@ -248,6 +246,7 @@ async def show_help(event):
         "• *.deljoin <id>* ➔ Rimuove un gruppo\n"
         "• *.cleanlist* ➔ Rimuove gruppi dove non fai più parte\n"
         "• *.scanallgroups* ➔ Scansiona e mostra tutti i gruppi\n"
+        "• *.setgroupmsg <id>::<msg>* ➔ Imposta un messaggio specifico per un gruppo\n"
         "• *.listchat* ➔ Mostra gruppi configurati\n"
         "• *.listallids* ➔ Lista ID di tutti i gruppi\n\n"
 
@@ -315,6 +314,14 @@ async def scan_all_groups(event):
             await event.respond("⚠ Nessun nuovo gruppo trovato o già tutti presenti nella lista.")
     except Exception as e:
         await event.respond(f"Errore durante la scansione dei gruppi: {str(e)}")
+
+@client.on(events.NewMessage(pattern=r'\.setgroupmsg\s+(-?\d+)::(.+)'))
+async def set_group_specific_msg(event):
+    global group_messages
+    gid = event.pattern_match.group(1).strip()
+    msg = event.pattern_match.group(2).strip()
+    group_messages[gid] = msg
+    await event.respond(f"✅ Impostato messaggio per gruppo {gid}")
 
 @client.on(events.NewMessage(pattern=r'\.addtime (\d+) (\d+)'))
 async def set_random_interval(event):
