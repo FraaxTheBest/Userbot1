@@ -129,15 +129,6 @@ async def send_spam():
 
     next_spam_in = delay  # Salva il tempo per .status
 
-    # Aspetta il delay
-    await asyncio.sleep(delay)
-
-except Exception as e:
-    print(f"❌ Errore su {group_id}: {e}")
-    continue
-
-# Invia il messaggio (con media o solo testo)
-if media_path and os.path.exists(media_path):
     await client.send_file(group_id, media_path, caption=message)
 else:
     await client.send_message(group_id, message)
