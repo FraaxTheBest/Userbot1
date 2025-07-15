@@ -61,10 +61,6 @@ spam_custom_messages = {}  # es: {group_id: "Messaggio personalizzato"}
 spam_counter = 0
 spam_started_at = None
 
-# Variabili per lo stato dello spam
-next_group_index = 0  # Indice del prossimo gruppo da spammare
-last_spam_time = None  # Tempo dell'ultimo messaggio inviato
-
 global spam_start_time, spam_end_time
 spam_start_time = start_hour
 spam_end_time = end_hour
