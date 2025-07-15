@@ -227,27 +227,28 @@ async def show_developer(event):
 @client.on(events.NewMessage(pattern=r'\.help'))
 async def show_help(event):
     help_text = (
-        "🌟 *Benvenuto nel tuo Spambot!*\n"
+        "🌟 Benvenuto nel tuo Spambot!\n"
         "Usa i comandi qui sotto:\n\n"
 
-        "🚀 *Spam:*\n"
-        "• *.start* ➔ Avvia lo spam\n"
-        "• *.stop* ➔ Ferma lo spam\n"
-        "• *.setmsg <testo>* ➔ Imposta un messaggio fisso oppure più messaggi separati da '//'\n"
-        "• *.addtime <min> <max>* ➔ Imposta un delay random tra MIN e MAX minuto\n\n"
+        "🚀 Spam:\n"
+        "• .start ➔ Avvia lo spam\n"
+        "• .stop ➔ Ferma lo spam\n"
+        "• .setmsg <testo> ➔ Imposta un messaggio fisso oppure più messaggi separati da '//'\n"
+        "• .addtime <min> <max> ➔ Imposta un delay random tra MIN e MAX minuto\n\n"
 
-        "🛠 *Gestione Gruppi:*\n"
-        "• *.join <id1> <id2> ...* ➔ Aggiunge più gruppi\n"
-        "• *.deljoin <id>* ➔ Rimuove un gruppo\n"
-        "• *.cleanlist* ➔ Rimuove gruppi dove non fai più parte\n"
-        "• *.scanallgroups* ➔ Scansiona e mostra tutti i gruppi\n"
-        "• *.setgroupmsg <id>::<msg>* ➔ Imposta un messaggio specifico per un gruppo\n"
-        "• *.listchat* ➔ Mostra gruppi configurati\n"
-        "• *.listallids* ➔ Lista ID di tutti i gruppi\n\n"
+        "🛠 Gestione Gruppi:\n"
+        "• .join <id1> <id2> ... ➔ Aggiunge più gruppi\n"
+        "• .deljoin <id> ➔ Rimuove un gruppo\n"
+        "• .cleanlist ➔ Rimuove gruppi dove non fai più parte\n"
+        "• .scanallgroups ➔ Scansiona e mostra tutti i gruppi\n"
+        "• .setgroupmsg <id> <msg> ➔ Imposta un messaggio specifico per un gruppo specifico\n"
+        "• .listchat ➔ Mostra gruppi configurati\n"
+        "• .settime ➔ Programma lo spam tra due orari precisi\n"
+        "• .listallids ➔ Lista ID di tutti i gruppi di cui sei dentro\n\n"
 
         "📋 *Informazioni:*\n"
-        "• *.status* ➔ Stato del bot\n"
-        "• *.dev* ➔ Info sul creatore\n"
+        "• .status ➔ Stato dello spam\n"
+        "• .dev ➔ Info sul creatore\n"
     )
     await event.respond(help_text)
 
