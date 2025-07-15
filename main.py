@@ -270,6 +270,8 @@ async def show_help(event):
         "• .start ➔ Avvia lo spam\n"
         "• .stop ➔ Ferma lo spam\n"
         "• .setmsg <testo> ➔ Imposta un messaggio fisso oppure più messaggi separati da '//'\n"
+         "• .settime ➔ Programma lo spam tra due orari precisi ogni giorno\n"
+         "• .stoptimer ➔ ferma lo spam automatico giornaliero\n"
         "• .addtime <min> <max> ➔ Imposta un delay random tra MIN e MAX minuto\n\n"
 
         "🛠 Gestione Gruppi:\n"
@@ -279,8 +281,6 @@ async def show_help(event):
         "• .scanallgroups ➔ Scansiona e mostra tutti i gruppi\n"
         "• .setgroupmsg <id> <msg> ➔ Imposta un messaggio specifico per un gruppo specifico\n"
         "• .listchat ➔ Mostra gruppi configurati\n"
-        "• .settime ➔ Programma lo spam tra due orari precisi ogni giorno\n"
-         "• .stoptimer ➔ ferma lo spam automatico giornaliero\n"
         "• .listallids ➔ Lista ID di tutti i gruppi di cui sei dentro\n\n"
 
         "📋 Informazioni:\n"
