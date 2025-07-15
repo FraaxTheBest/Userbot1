@@ -61,9 +61,9 @@ spam_custom_messages = {}  # es: {group_id: "Messaggio personalizzato"}
 spam_counter = 0
 spam_started_at = None
 
-global spam_start_time, spam_end_time
-spam_start_time = start_hour
-spam_end_time = end_hour
+def my_function():
+    global spam_start_time, spam_end_time
+    spam_start_time = time.time()
 
 # Timer per orario programmato
 start_hour = None
