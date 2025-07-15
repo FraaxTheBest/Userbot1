@@ -4,6 +4,7 @@ import asyncio
 import random
 from telethon import TelegramClient, events   # <-- questa deve esserci OBBLIGATORIO
 from telethon.errors import FloodWaitError
+from datetime import datetime, timedelta
 from telethon.tl.types import Channel
 from telethon.tl.functions.messages import GetDialogFiltersRequest
 from dotenv import load_dotenv
@@ -246,7 +247,7 @@ async def show_help(event):
         "• .settime ➔ Programma lo spam tra due orari precisi\n"
         "• .listallids ➔ Lista ID di tutti i gruppi di cui sei dentro\n\n"
 
-        "📋 *Informazioni:*\n"
+        "📋 Informazioni:\n"
         "• .status ➔ Stato dello spam\n"
         "• .dev ➔ Info sul creatore\n"
     )
