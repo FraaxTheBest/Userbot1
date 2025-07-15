@@ -122,7 +122,6 @@ async def send_spam():
                 continue
 
 
-# Aggiungi il comando .status per mostrare lo stato
 @client.on(events.NewMessage(pattern=r"\.status"))
 async def handler_status(event):
     global spam_mode, spam_start_time, spam_end_time, spam_active
@@ -154,11 +153,9 @@ async def handler_status(event):
 
     # Messaggio principale
     if spam_message:
-        status_parts.append("📝 **Messaggio di spam impostato**:\n
-\n" + spam_message + "\n
-")
+        status_parts.append(f"📝 **Messaggio di spam impostato**:\n\n{spam_message}\n")
     else:
-        status_parts.append("📝 **Messaggio di spam impostato**: Nessun messaggio impostato.")
+        status_parts.append("ℹ️ **Nessun messaggio di spam impostato.**\n")
 
     # Messaggi personalizzati
     if spam_custom_messages:
@@ -169,9 +166,7 @@ async def handler_status(event):
                 name = entity.username or entity.title or str(group_id)
             except:
                 name = str(group_id)
-            status_parts.append(f"• {name} (ID: {group_id}):\n
-\n{msg}\n
-")
+            status_parts.append(f"• {name} (ID: {group_id}):\n\n{msg}\n")
 
     # Gruppi attivi
     if spam_groups:
