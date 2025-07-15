@@ -57,6 +57,11 @@ spam_messages_random = None
 next_group_index = 0  # Indice del prossimo gruppo da spammare
 last_spam_time = None  # Tempo dell'ultimo messaggio inviato
 
+# Timer per orario programmato
+start_hour = None
+end_hour = None
+spam_timer_active = False
+
 # Inizializza il client Telegram
 client = TelegramClient('user.session', API_ID, API_HASH)
 
@@ -221,6 +226,36 @@ async def clean_list(event):
         json.dump(config, f, indent=4)
     await event.respond("Lista gruppi pulita! Rimossi quelli in cui non sei più presente.")
 
+@client.on(events.NewMessage(pattern=r"\.settime (\d{1,2}) (\d{1,2})"))
+async def handler_settime(event):
+    global start_hour, end_hour, spam_timer_active
+    start_hour = int(event.pattern_match.group(1))
+    end_hour = int(event.pattern_match.group(2))
+    spam_timer_active = True
+    await event.reply(f"⏰ Timer attivo: spam dalle **{start_hour}:00** alle **{end_hour}:00** ogni giorno.")
+    asyncio.create_task(spam_timer_loop())
+
+async def spam_timer_loop():
+    global spam_timer_active
+    while spam_timer_active:
+        now = datetime.now()
+        current_hour = now.hour
+
+        if start_hour <= current_hour < end_hour:
+            # Avvia spam (una sola volta all'ora o metti controllo personalizzato)
+            if not is_spamming:
+                await start_spam()
+        else:
+            if is_spamming:
+                await stop_spam()
+        await asyncio.sleep(60)  # Controlla ogni 60 secondi
+
+@client.on(events.NewMessage(pattern=r"\.stoptimer"))
+async def stop_timer(event):
+    global spam_timer_active
+    spam_timer_active = False
+    await event.reply("⏹️ Timer automatico disattivato. Lo spam non verrà più attivato in base all'orario.")
+
 @client.on(events.NewMessage(pattern=r'\.dev'))
 async def show_developer(event):
     await event.respond("Lo sviluppatore del userbot è @ASTROMOONEY")
@@ -244,7 +279,8 @@ async def show_help(event):
         "• .scanallgroups ➔ Scansiona e mostra tutti i gruppi\n"
         "• .setgroupmsg <id> <msg> ➔ Imposta un messaggio specifico per un gruppo specifico\n"
         "• .listchat ➔ Mostra gruppi configurati\n"
-        "• .settime ➔ Programma lo spam tra due orari precisi\n"
+        "• .settime ➔ Programma lo spam tra due orari precisi ogni giorno\n"
+         "• .stoptimer ➔ ferma lo spam automatico giornaliero\n"
         "• .listallids ➔ Lista ID di tutti i gruppi di cui sei dentro\n\n"
 
         "📋 Informazioni:\n"
