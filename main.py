@@ -65,6 +65,10 @@ spam_started_at = None
 next_group_index = 0  # Indice del prossimo gruppo da spammare
 last_spam_time = None  # Tempo dell'ultimo messaggio inviato
 
+global spam_start_time, spam_end_time
+spam_start_time = start_hour
+spam_end_time = end_hour
+
 # Timer per orario programmato
 start_hour = None
 end_hour = None
@@ -122,7 +126,7 @@ async def send_spam():
                 continue
 
 
-@client.on(events.NewMessage(pattern=r"\.status"))
+@client.on(events.NewMessage(pattern=r"^\.status\b"))
 async def handler_status(event):
     global spam_mode, spam_start_time, spam_end_time, spam_active
     global spam_message, spam_custom_messages, spam_groups, spam_counter, spam_started_at
@@ -356,16 +360,19 @@ async def list_chats(event):
 
 @client.on(events.NewMessage(pattern=r'\.start'))
 async def start_spam(event):
-    global is_spamming
+    global is_spamming, spam_active, spam_started_at
     if not is_spamming:
         is_spamming = True
+        spam_active = True
+        spam_started_at = datetime.now()
         asyncio.create_task(send_spam())
         await event.respond("Spam avviato.")
 
 @client.on(events.NewMessage(pattern=r'\.stop'))
 async def stop_spam(event):
-    global is_spamming
+    global is_spamming, spam_active
     is_spamming = False
+    spam_active = False
     await event.respond("Spam fermato.")
 
 @client.on(events.NewMessage(pattern=r'\.scanallgroups'))
