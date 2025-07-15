@@ -53,6 +53,14 @@ next_group_name = None
 next_spam_in = None
 spam_messages_random = None
 
+spam_mode = "manuale"  # o "automatica"
+spam_start_time = None
+spam_end_time = None
+spam_active = False  # opzionale se usi già is_spamming
+spam_custom_messages = {}  # es: {group_id: "Messaggio personalizzato"}
+spam_counter = 0
+spam_started_at = None
+
 # Variabili per lo stato dello spam
 next_group_index = 0  # Indice del prossimo gruppo da spammare
 last_spam_time = None  # Tempo dell'ultimo messaggio inviato
@@ -115,46 +123,78 @@ async def send_spam():
 
 
 # Aggiungi il comando .status per mostrare lo stato
-@client.on(events.NewMessage(pattern=r'\.status'))
-async def check_status(event):
-    global is_spamming, min_delay, max_delay, spam_message, spam_messages_random, spam_groups, next_group_name, next_spam_in
+@client.on(events.NewMessage(pattern=r"\.status"))
+async def handler_status(event):
+    global spam_mode, spam_start_time, spam_end_time, spam_active
+    global spam_message, spam_custom_messages, spam_groups, spam_counter, spam_started_at
 
-    status_text = ""
+    def format_time(dt):
+        return dt.strftime("%H:%M") if dt else "N/D"
 
-    if is_spamming:
-        status_text += "✅ Spam ATTIVO!\n\n"
+    now = datetime.now()
+    status_parts = []
+
+    # Modalità e orari
+    if spam_mode == "automatica":
+        status_parts.append("🧰 **Modalità spam**: Automatica (Giornaliera)")
+        status_parts.append(f"🕒 **Orari spam**: dalle {spam_start_time:02d}:00 alle {spam_end_time:02d}:00")
     else:
-        status_text += "⛔ Spam NON attivo.\n\n"
+        status_parts.append("🧰 **Modalità spam**: Manuale")
+        if spam_started_at:
+            status_parts.append(f"🕒 **Inizio spam**: {format_time(spam_started_at)}")
+        else:
+            status_parts.append("🕒 **Inizio spam**: N/D")
 
-    # Intervallo random
-    if min_delay and max_delay:
-        status_text += f"⏱ Intervallo random: {min_delay // 60} - {max_delay // 60} minuti\n"
+    # Stato attivo
+    stato = "✅ **Attivo**" if spam_active else "❌ **Non attivo**"
+    status_parts.append(f"📡 **Stato attuale**: {stato}")
+
+    # Messaggi inviati
+    status_parts.append(f"📬 **Messaggi inviati**: {spam_counter}")
+
+    # Messaggio principale
+    if spam_message:
+        status_parts.append("📝 **Messaggio di spam impostato**:\n
+\n" + spam_message + "\n
+")
     else:
-        status_text += "⏱ Intervallo: default (1 minuto)\n"
+        status_parts.append("📝 **Messaggio di spam impostato**: Nessun messaggio impostato.")
 
-    # Modalità di invio
-    if spam_messages_random:
-        status_text += f"💬 Modalità: Messaggi RANDOM ({len(spam_messages_random)} messaggi)\n"
-    elif spam_message:
-        status_text += "💬 Modalità: Messaggio SINGOLO\n"
-    else:
-        status_text += "⚠ Nessun messaggio impostato!\n"
+    # Messaggi personalizzati
+    if spam_custom_messages:
+        status_parts.append("✏️ **Messaggi personalizzati per gruppi**:")
+        for group_id, msg in spam_custom_messages.items():
+            try:
+                entity = await client.get_entity(group_id)
+                name = entity.username or entity.title or str(group_id)
+            except:
+                name = str(group_id)
+            status_parts.append(f"• {name} (ID: {group_id}):\n
+\n{msg}\n
+")
 
-    # Gruppi caricati
+    # Gruppi attivi
     if spam_groups:
-        status_text += f"👥 Gruppi configurati: {len(spam_groups)} gruppi\n"
+        status_parts.append("👥 **Gruppi attivi in spam**:")
+        for group_id in spam_groups:
+            try:
+                entity = await client.get_entity(group_id)
+                name = entity.username or entity.title or str(group_id)
+            except:
+                name = str(group_id)
+            status_parts.append(f"• {name}")
     else:
-        status_text += "⚠ Nessun gruppo nella lista!\n"
+        status_parts.append("👥 **Gruppi attivi in spam**: Nessuno")
 
-    # Prossimo gruppo + tempo
-    if next_group_name and next_spam_in:
-        minuti_restanti = next_spam_in // 60
-        secondi_restanti = next_spam_in % 60
-        status_text += f"\n🔜 Prossimo spam su: *{next_group_name}* tra {minuti_restanti} min {secondi_restanti} sec."
-    else:
-        status_text += "\n🔜 Nessun spam pianificato."
-
-    await event.respond(status_text)
+    # Invio a blocchi per evitare limite caratteri
+    msg = ""
+    for part in status_parts:
+        if len(msg) + len(part) + 2 > 4000:
+            await event.reply(msg)
+            msg = ""
+        msg += part + "\n\n"
+    if msg:
+        await event.reply(msg)
 
 @client.on(events.NewMessage(pattern=r'\.join\s+(.+)'))
 async def join_multiple_groups(event):
