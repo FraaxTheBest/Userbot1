@@ -103,24 +103,26 @@ async def send_spam():
                     is_spamming = False
                     break
 
-                # Invia messaggio con o senza media
-                if media_path and os.path.exists(media_path):
-                    await client.send_file(group_id, media_path, caption=message)
-                else:
-                    await client.send_message(group_id, message)
+               try:
+    # Invia messaggio con o senza media
+    if media_path and os.path.exists(media_path):
+        await client.send_file(group_id, media_path, caption=message)
+    else:
+        await client.send_message(group_id, message)
 
-                print(f"✅ Messaggio inviato a {next_group_name}")
+    spam_counter += 1  # Aggiorna contatore SOLO se inviato correttamente
 
-                # Calcola delay
-                delay = random.randint(min_delay, max_delay) if min_delay and max_delay else 60
-                next_spam_in = delay
+    print(f"✅ Messaggio inviato a {next_group_name}")
 
-                await asyncio.sleep(delay)
+    # Calcola delay
+    delay = random.randint(min_delay, max_delay) if min_delay and max_delay else 60
+    next_spam_in = delay
 
-            except Exception as e:
-                print(f"❌ Errore su {group_id}: {e}")
-                continue
+    await asyncio.sleep(delay)
 
+except Exception as e:
+    print(f"❌ Errore su {group_id}: {e}")
+    continue
 
 @client.on(events.NewMessage(pattern=r"^\.status\b"))
 async def handler_status(event):
