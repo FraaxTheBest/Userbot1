@@ -2,30 +2,27 @@ import os
 import json
 import asyncio
 import random
-from telethon import TelegramClient, events   # <-- questa deve esserci OBBLIGATORIO
+from telethon import TelegramClient, events
 from telethon.errors import FloodWaitError
 from datetime import datetime, timedelta
 from telethon.tl.types import Channel
 from telethon.tl.functions.messages import GetDialogFiltersRequest
 from dotenv import load_dotenv
+
 group_messages = {}
 media_path = None
 
-# Carica variabili d'ambiente dal file .env
 load_dotenv()
 
-# Parametri di autenticazione (prendi da variabili d'ambiente)
 API_ID = os.getenv('API_ID')
 API_HASH = os.getenv('API_HASH')
 PHONE = os.getenv('PHONE')
 PASSWORD = os.getenv('PASSWORD')
 
-# Controlla se le variabili d'ambiente sono caricate correttamente
 if not API_ID or not API_HASH or not PHONE or not PASSWORD:
     print("ERROR: Le variabili di ambiente non sono correttamente configurate.")
     exit(1)
 
-# Carica configurazione dal file spam_config.json, se esiste
 def load_config():
     if os.path.exists('spam_config.json'):
         with open('spam_config.json', 'r') as f:
@@ -40,46 +37,49 @@ def load_config():
 
 config = load_config()
 
-# Parametri di configurazione
 spam_groups = config['groups']
 spam_interval = config['interval']
 spam_message = config['message']
 is_spamming = False
 
-# Variabili aggiuntive
 min_delay = None
 max_delay = None
 next_group_name = None
 next_spam_in = None
 spam_messages_random = None
 
-# Aggiungi queste variabili globali all'inizio
+# Variabili globali unificate
 spam_counter = 0
-spam_mode = "manuale"  # o "automatica"
+spam_mode = "manuale"
 spam_start_time = None
 spam_end_time = None
-spam_active = False
 spam_started_at = None
+spam_custom_messages = {}
 
-spam_mode = "manuale"  # o "automatica"
-spam_start_time = None
-spam_end_time = None
-spam_active = False  # opzionale se usi già is_spamming
-spam_custom_messages = {}  # es: {group_id: "Messaggio personalizzato"}
-spam_counter = 0
-spam_started_at = None
-
-def my_function():
-    global spam_start_time, spam_end_time
-    spam_start_time = time.time()
-
-# Timer per orario programmato
 start_hour = None
 end_hour = None
 spam_timer_active = False
 
-# Inizializza il client Telegram
 client = TelegramClient('user.session', API_ID, API_HASH)
+
+async def spam_timer_loop():
+    global is_spamming
+    while spam_timer_active:
+        now = datetime.now()
+        current_hour = now.hour
+        
+        if start_hour <= current_hour < end_hour:
+            if not is_spamming:
+                is_spamming = True
+                spam_started_at = datetime.now()
+                asyncio.create_task(send_spam())
+                print("🔄 Spam automatico avviato")
+        else:
+            if is_spamming:
+                is_spamming = False
+                print("🛑 Spam automatico fermato")
+        
+        await asyncio.sleep(60)
 
 async def send_spam():
     global is_spamming, spam_message, spam_messages_random, spam_groups, min_delay, max_delay, next_group_name, next_spam_in, spam_counter
@@ -95,11 +95,9 @@ async def send_spam():
                 break
 
             try:
-                # Ottieni il gruppo attuale
                 entity = await client.get_entity(group_id)
                 next_group_name = getattr(entity, 'title', str(group_id))
 
-                # Scegli messaggio
                 if str(group_id) in group_messages:
                     message = group_messages[str(group_id)]
                 elif spam_messages_random:
@@ -111,7 +109,6 @@ async def send_spam():
                     is_spamming = False
                     break
 
-                # Invia messaggio con o senza media
                 if media_path and os.path.exists(media_path):
                     await client.send_file(group_id, media_path, caption=message)
                 else:
@@ -120,7 +117,6 @@ async def send_spam():
                 spam_counter += 1
                 print(f"✅ Messaggio inviato a {next_group_name}")
 
-                # Calcola delay
                 delay = random.randint(min_delay, max_delay) if min_delay and max_delay else 60
                 next_spam_in = delay
 
@@ -130,10 +126,9 @@ async def send_spam():
                 print(f"❌ Errore su {group_id}: {e}")
                 continue
 
-
 @client.on(events.NewMessage(pattern=r"^\.status\b"))
 async def handler_status(event):
-    global spam_mode, start_hour, end_hour, spam_active, spam_message, spam_custom_messages, spam_groups, spam_counter, spam_started_at
+    global spam_mode, start_hour, end_hour, spam_message, spam_custom_messages, spam_groups, spam_counter, spam_started_at
 
     def format_time(dt):
         return dt.strftime("%H:%M") if dt else "N/D"
@@ -141,7 +136,6 @@ async def handler_status(event):
     now = datetime.now()
     status_parts = []
 
-    # Modalità e orari
     if spam_mode == "automatica":
         status_parts.append("🧰 **Modalità spam**: Automatica (Giornaliera)")
         if start_hour is not None and end_hour is not None:
@@ -155,20 +149,16 @@ async def handler_status(event):
         else:
             status_parts.append("🕒 **Inizio spam**: N/D")
 
-    # Stato attivo
     stato = "✅ **Attivo**" if is_spamming else "❌ **Non attivo**"
     status_parts.append(f"📡 **Stato attuale**: {stato}")
 
-    # Messaggi inviati
     status_parts.append(f"📬 **Messaggi inviati**: {spam_counter}")
 
-    # Messaggio principale
     if spam_message:
         status_parts.append(f"📝 **Messaggio di spam impostato**:\n\n{spam_message}\n")
     else:
         status_parts.append("ℹ️ **Nessun messaggio di spam impostato.**\n")
 
-    # Messaggi personalizzati
     if spam_custom_messages:
         status_parts.append("✏️ **Messaggi personalizzati per gruppi**:")
         for group_id, msg in spam_custom_messages.items():
@@ -179,7 +169,6 @@ async def handler_status(event):
                 name = str(group_id)
             status_parts.append(f"• {name} (ID: {group_id}):\n\n{msg}\n")
 
-    # Gruppi attivi
     if spam_groups:
         status_parts.append("👥 **Gruppi attivi in spam**:")
         for group_id in spam_groups:
@@ -192,7 +181,6 @@ async def handler_status(event):
     else:
         status_parts.append("👥 **Gruppi attivi in spam**: Nessuno")
 
-    # Invio a blocchi per evitare limite caratteri
     msg = ""
     for part in status_parts:
         if len(msg) + len(part) + 2 > 4000:
@@ -229,7 +217,6 @@ async def join_multiple_groups(event):
     except Exception as e:
         await event.respond(f"Errore durante l'aggiunta dei gruppi: {str(e)}")
 
-
 @client.on(events.NewMessage(pattern=r'\.deljoin\s+(-?\d+)'))
 async def remove_group(event):
     global spam_groups
@@ -249,7 +236,6 @@ async def get_group_id(event):
     try:
         group = await client.get_entity(invite_link)
         group_id = group.id
-        # Se l'entità è un canale o supergruppo, forziamo il formato con il prefisso "-100"
         if isinstance(group, Channel) and not str(group_id).startswith("-100"):
             group_id = f"-100{abs(group.id)}"
         await event.respond(f"🔹 Nome: {group.title} | ID: {group_id}")
@@ -274,14 +260,15 @@ async def clean_list(event):
 
 @client.on(events.NewMessage(pattern=r"\.settime (\d{1,2}) (\d{1,2})"))
 async def handler_settime(event):
-    global start_hour, end_hour, spam_timer_active, spam_mode
+    global start_hour, end_hour, spam_timer_active, spam_mode, is_spamming
     start_hour = int(event.pattern_match.group(1))
     end_hour = int(event.pattern_match.group(2))
     spam_timer_active = True
     spam_mode = "automatica"
-    await event.reply(f"⏰ Timer attivo: spam dalle **{start_hour}:00** alle **{end_hour}:00** ogni giorno.")
+    is_spamming = False
     asyncio.create_task(spam_timer_loop())
-    
+    await event.reply(f"⏰ Timer attivo: spam dalle **{start_hour:02d}:00** alle **{end_hour:02d}:00** ogni giorno.")
+
 @client.on(events.NewMessage(pattern=r"\.stoptimer"))
 async def stop_timer(event):
     global spam_timer_active
@@ -302,8 +289,8 @@ async def show_help(event):
         "• .start ➔ Avvia lo spam\n"
         "• .stop ➔ Ferma lo spam\n"
         "• .setmsg <testo> ➔ Imposta un messaggio fisso oppure più messaggi separati da '//'\n"
-         "• .settime ➔ Programma lo spam tra due orari precisi ogni giorno\n"
-         "• .stoptimer ➔ ferma lo spam automatico giornaliero\n"
+        "• .settime ➔ Programma lo spam tra due orari precisi ogni giorno\n"
+        "• .stoptimer ➔ ferma lo spam automatico giornaliero\n"
         "• .addtime <min> <max> ➔ Imposta un delay random tra MIN e MAX minuto\n\n"
 
         "🛠 Gestione Gruppi:\n"
@@ -321,64 +308,63 @@ async def show_help(event):
     )
     await event.respond(help_text)
 
+# CORRETTO: listchats (prima era listchat)
 @client.on(events.NewMessage(pattern=r'\.listchats'))
 async def list_chats(event):
     try:
         dialogs = await client.get_dialogs()
         lines = []
-
+        
         for dialog in dialogs:
             if dialog.is_group or dialog.is_channel:
-                lines.append(f"{dialog.name} ({dialog.id})")
+                lines.append(f"{dialog.name} (ID: {dialog.id})")
 
         if not lines:
             await event.respond("❌ Nessun gruppo o canale trovato.")
             return
 
-        MAX_MESSAGE_LENGTH = 4000
-        message = ""
-
-        for line in lines:
-            if len(message) + len(line) + 1 > MAX_MESSAGE_LENGTH:  # +1 per il newline
-                await event.respond(message)
-                message = ""
-            message += line + "\n"
-
-        if message:
-            await event.respond(message)
+        message = "📋 Lista gruppi/canali:\n\n" + "\n".join(lines)
+        
+        # Split per evitare errori di lunghezza
+        while len(message) > 0:
+            part = message[:4000]
+            last_newline = part.rfind('\n')
+            if last_newline != -1:
+                part = message[:last_newline]
+            await event.respond(part)
+            message = message[len(part):].lstrip()
 
     except Exception as e:
         await event.respond(f"❌ Errore durante la lista dei gruppi: {str(e)}")
-    
 
 @client.on(events.NewMessage(pattern=r'\.start'))
 async def start_spam(event):
-    global is_spamming, spam_active, spam_started_at
+    global is_spamming, spam_started_at, spam_mode
     if not is_spamming:
         is_spamming = True
-        spam_active = True
         spam_started_at = datetime.now()
-        asyncio.create_task(send_spam())
-        await event.respond("Spam avviato.")
+        if spam_mode == "manuale":
+            asyncio.create_task(send_spam())
+            await event.respond("Spam avviato.")
+        else:
+            await event.respond("⚠ Modalità automatica attiva - usa .settime per modificare")
 
 @client.on(events.NewMessage(pattern=r'\.stop'))
 async def stop_spam(event):
-    global is_spamming, spam_active
+    global is_spamming
     is_spamming = False
-    spam_active = False
     await event.respond("Spam fermato.")
 
 @client.on(events.NewMessage(pattern=r'\.scanallgroups'))
 async def scan_all_groups(event):
     global spam_groups
     try:
-        MAX_MESSAGE_LENGTH = 4000  # ✅ Qui va bene!
-
+        MAX_MESSAGE_LENGTH = 4000
         dialogs = await client.get_dialogs()
         added_groups = []
 
         for dialog in dialogs:
-            if dialog.is_group or dialog.is_channel:  # prende solo gruppi/supergruppi/canali
+            if dialog.is_group or dialog.is_channel:
                 chat_id = dialog.id
                 chat_name = dialog.name
 
@@ -386,7 +372,6 @@ async def scan_all_groups(event):
                     spam_groups.append(chat_id)
                     added_groups.append(f"{chat_name} ({chat_id})")
 
-        # Salva il nuovo spam_config.json
         config['groups'] = spam_groups
         with open('spam_config.json', 'w') as f:
             json.dump(config, f, indent=4)
@@ -418,14 +403,14 @@ async def set_random_interval(event):
     if min_minutes >= max_minutes:
         await event.respond("⚠ Il primo numero deve essere minore del secondo!")
     else:
-        min_delay = min_minutes * 60  # Converti minuti in secondi
+        min_delay = min_minutes * 60
         max_delay = max_minutes * 60
         await event.respond(f"✅ Delay random impostato tra {min_minutes} e {max_minutes} minuti.")
 
 @client.on(events.NewMessage(pattern=r'\.listallids'))
 async def list_all_group_ids(event):
     try:
-        MAX_MESSAGE_LENGTH = 4000  # <-- INDENTAZIONE CORRETTA QUI
+        MAX_MESSAGE_LENGTH = 4000
         dialogs = await client.get_dialogs()
         groups_info = []
 
@@ -438,7 +423,6 @@ async def list_all_group_ids(event):
         if groups_info:
             response = "📋 *Lista di tutti i gruppi dove sei dentro:*\n\n" + "\n".join(groups_info)
             if len(response) > MAX_MESSAGE_LENGTH:
-                # Spezzetta e manda a blocchi
                 for i in range(0, len(response), MAX_MESSAGE_LENGTH):
                     await event.respond(response[i:i+MAX_MESSAGE_LENGTH])
             else:
@@ -454,7 +438,6 @@ async def set_message(event):
 
     text = event.pattern_match.group(1).strip()
 
-    # Messaggi specifici per gruppi (id::msg || id2::msg2)
     if "::" in text and "||" in text:
         parts = [p.strip() for p in text.split("||")]
         group_messages = {}
@@ -470,19 +453,16 @@ async def set_message(event):
         await event.respond(f"✅ Impostati {len(group_messages)} messaggi specifici per gruppi.")
         return
 
-    # Messaggi random (divisi da //)
     if '//' in text:
         spam_messages_random = [msg.strip() for msg in text.split('//')]
         spam_message = None
         group_messages = {}
         media_path = None
 
-        # Calcolo totale righe (somma righe per ogni messaggio)
         total_lines = sum(msg.count('\n') + 1 for msg in spam_messages_random)
         await event.respond(f"✅ Impostati {len(spam_messages_random)} messaggi random.\n🧾 Totale righe (sommate): {total_lines}")
         return
 
-    # Messaggio singolo
     spam_message = text
     spam_messages_random = None
     group_messages = {}
@@ -490,7 +470,6 @@ async def set_message(event):
 
     lines = spam_message.count('\n') + 1
     await event.respond(f"✅ Messaggio singolo impostato correttamente.\n🧾 Righe: {lines}")
-
 
 @client.on(events.NewMessage(pattern=r'\.setmsg', func=lambda e: e.is_reply))
 async def set_message_with_media(event):
@@ -517,30 +496,6 @@ async def set_message_with_media(event):
 
     lines = spam_message.count('\n') + 1 if spam_message else 0
     await event.respond(f"✅ Messaggio {media_type} impostato.\n🎯 Modalità: SINGOLO\n🧾 Righe: {lines}")
-
-@client.on(events.NewMessage(pattern=r'\.setmsg', func=lambda e: e.is_reply))
-async def set_message_with_media(event):
-    global spam_message, spam_messages_random, media_path, group_messages
-
-    replied = await event.get_reply_message()
-
-    if not replied:
-        await event.respond("⚠ Devi rispondere a un messaggio con media o testo.")
-        return
-
-    if replied.media:
-        file = await replied.download_media()
-        media_path = file
-        spam_message = replied.message or ""
-        spam_messages_random = None
-        group_messages = {}
-        await event.respond("✅ Messaggio con media impostato.")
-    else:
-        spam_message = replied.message or ""
-        spam_messages_random = None
-        group_messages = {}
-        media_path = None
-        await event.respond("✅ Messaggio di testo impostato.")
 
 async def main():
     while True:
