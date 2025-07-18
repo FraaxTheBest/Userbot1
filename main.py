@@ -109,6 +109,8 @@ async def send_spam():
                 else:
                     await client.send_message(group_id, message)
 
+                spam_counter += 1
+
                 print(f"✅ Messaggio inviato a {next_group_name}")
 
                 # Calcola delay
