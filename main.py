@@ -53,6 +53,14 @@ next_group_name = None
 next_spam_in = None
 spam_messages_random = None
 
+# Aggiungi queste variabili globali all'inizio
+spam_counter = 0
+spam_mode = "manuale"  # o "automatica"
+spam_start_time = None
+spam_end_time = None
+spam_active = False
+spam_started_at = None
+
 spam_mode = "manuale"  # o "automatica"
 spam_start_time = None
 spam_end_time = None
@@ -74,7 +82,7 @@ spam_timer_active = False
 client = TelegramClient('user.session', API_ID, API_HASH)
 
 async def send_spam():
-    global is_spamming, spam_message, spam_messages_random, spam_groups, min_delay, max_delay, next_group_name, next_spam_in
+    global is_spamming, spam_message, spam_messages_random, spam_groups, min_delay, max_delay, next_group_name, next_spam_in, spam_counter
 
     while is_spamming:
         if not spam_groups:
@@ -103,31 +111,29 @@ async def send_spam():
                     is_spamming = False
                     break
 
-               try:
-    # Invia messaggio con o senza media
-    if media_path and os.path.exists(media_path):
-        await client.send_file(group_id, media_path, caption=message)
-    else:
-        await client.send_message(group_id, message)
+                # Invia messaggio con o senza media
+                if media_path and os.path.exists(media_path):
+                    await client.send_file(group_id, media_path, caption=message)
+                else:
+                    await client.send_message(group_id, message)
 
-    spam_counter += 1  # Aggiorna contatore SOLO se inviato correttamente
+                spam_counter += 1
+                print(f"✅ Messaggio inviato a {next_group_name}")
 
-    print(f"✅ Messaggio inviato a {next_group_name}")
+                # Calcola delay
+                delay = random.randint(min_delay, max_delay) if min_delay and max_delay else 60
+                next_spam_in = delay
 
-    # Calcola delay
-    delay = random.randint(min_delay, max_delay) if min_delay and max_delay else 60
-    next_spam_in = delay
+                await asyncio.sleep(delay)
 
-    await asyncio.sleep(delay)
+            except Exception as e:
+                print(f"❌ Errore su {group_id}: {e}")
+                continue
 
-except Exception as e:
-    print(f"❌ Errore su {group_id}: {e}")
-    continue
 
 @client.on(events.NewMessage(pattern=r"^\.status\b"))
 async def handler_status(event):
-    global spam_mode, spam_start_time, spam_end_time, spam_active
-    global spam_message, spam_custom_messages, spam_groups, spam_counter, spam_started_at
+    global spam_mode, start_hour, end_hour, spam_active, spam_message, spam_custom_messages, spam_groups, spam_counter, spam_started_at
 
     def format_time(dt):
         return dt.strftime("%H:%M") if dt else "N/D"
@@ -138,7 +144,10 @@ async def handler_status(event):
     # Modalità e orari
     if spam_mode == "automatica":
         status_parts.append("🧰 **Modalità spam**: Automatica (Giornaliera)")
-        status_parts.append(f"🕒 **Orari spam**: dalle {spam_start_time:02d}:00 alle {spam_end_time:02d}:00")
+        if start_hour is not None and end_hour is not None:
+            status_parts.append(f"🕒 **Orari spam**: dalle {start_hour:02d}:00 alle {end_hour:02d}:00")
+        else:
+            status_parts.append("🕒 **Orari spam**: Non impostati")
     else:
         status_parts.append("🧰 **Modalità spam**: Manuale")
         if spam_started_at:
@@ -147,7 +156,7 @@ async def handler_status(event):
             status_parts.append("🕒 **Inizio spam**: N/D")
 
     # Stato attivo
-    stato = "✅ **Attivo**" if spam_active else "❌ **Non attivo**"
+    stato = "✅ **Attivo**" if is_spamming else "❌ **Non attivo**"
     status_parts.append(f"📡 **Stato attuale**: {stato}")
 
     # Messaggi inviati
@@ -265,28 +274,14 @@ async def clean_list(event):
 
 @client.on(events.NewMessage(pattern=r"\.settime (\d{1,2}) (\d{1,2})"))
 async def handler_settime(event):
-    global start_hour, end_hour, spam_timer_active
+    global start_hour, end_hour, spam_timer_active, spam_mode
     start_hour = int(event.pattern_match.group(1))
     end_hour = int(event.pattern_match.group(2))
     spam_timer_active = True
+    spam_mode = "automatica"
     await event.reply(f"⏰ Timer attivo: spam dalle **{start_hour}:00** alle **{end_hour}:00** ogni giorno.")
     asyncio.create_task(spam_timer_loop())
-
-async def spam_timer_loop():
-    global spam_timer_active
-    while spam_timer_active:
-        now = datetime.now()
-        current_hour = now.hour
-
-        if start_hour <= current_hour < end_hour:
-            # Avvia spam (una sola volta all'ora o metti controllo personalizzato)
-            if not is_spamming:
-                await start_spam()
-        else:
-            if is_spamming:
-                await stop_spam()
-        await asyncio.sleep(60)  # Controlla ogni 60 secondi
-
+    
 @client.on(events.NewMessage(pattern=r"\.stoptimer"))
 async def stop_timer(event):
     global spam_timer_active
