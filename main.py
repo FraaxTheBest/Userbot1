@@ -82,7 +82,7 @@ async def spam_timer_loop():
         await asyncio.sleep(60)
 
 async def send_spam():
-    global is_spamming, spam_message, spam_messages_random, spam_groups, min_delay, max_delay, next_group_name, next_spam_in, spam_counter
+    global is_spamming, spam_message, spam_messages_random, spam_groups, min_delay, max_delay, next_group_name, next_spam_in, spam_counter, global spam_counter
 
     while is_spamming:
         if not spam_groups:
@@ -113,7 +113,7 @@ async def send_spam():
                     await client.send_file(group_id, media_path, caption=message)
                 else:
                     await client.send_message(group_id, message)
-
+                
                 spam_counter += 1
                 print(f"✅ Messaggio inviato a {next_group_name}")
 
@@ -128,65 +128,71 @@ async def send_spam():
 
 @client.on(events.NewMessage(pattern=r"^\.status\b"))
 async def handler_status(event):
-    global spam_mode, start_hour, end_hour, spam_message, spam_custom_messages, spam_groups, spam_counter, spam_started_at
+    global spam_mode, start_hour, end_hour, spam_message, group_messages, spam_groups
+    global spam_counter, spam_started_at, is_spamming
 
     def format_time(dt):
         return dt.strftime("%H:%M") if dt else "N/D"
 
-    now = datetime.now()
     status_parts = []
 
+    # 🧰 Modalità
     if spam_mode == "automatica":
         status_parts.append("🧰 **Modalità spam**: Automatica (Giornaliera)")
         if start_hour is not None and end_hour is not None:
             status_parts.append(f"🕒 **Orari spam**: dalle {start_hour:02d}:00 alle {end_hour:02d}:00")
         else:
             status_parts.append("🕒 **Orari spam**: Non impostati")
+        status_parts.append(f"🕒 **Avviato automaticamente alle**: {format_time(spam_started_at)}" if spam_started_at else "🕒 **Avvio**: N/D")
     else:
         status_parts.append("🧰 **Modalità spam**: Manuale")
-        if spam_started_at:
-            status_parts.append(f"🕒 **Inizio spam**: {format_time(spam_started_at)}")
-        else:
-            status_parts.append("🕒 **Inizio spam**: N/D")
+        status_parts.append(f"🕒 **Inizio spam**: {format_time(spam_started_at)}" if spam_started_at else "🕒 **Inizio spam**: N/D")
 
+    # 📡 Stato
     stato = "✅ **Attivo**" if is_spamming else "❌ **Non attivo**"
     status_parts.append(f"📡 **Stato attuale**: {stato}")
 
+    # 📬 Messaggi inviati
     status_parts.append(f"📬 **Messaggi inviati**: {spam_counter}")
 
+    # 📝 Messaggio di spam (globale)
     if spam_message:
-        status_parts.append(f"📝 **Messaggio di spam impostato**:\n\n{spam_message}\n")
-    else:
-        status_parts.append("ℹ️ **Nessun messaggio di spam impostato.**\n")
+        status_parts.append(f"📝 **Messaggio globale impostato**:\n\n{spam_message}")
+    elif not spam_message and not group_messages:
+        status_parts.append("ℹ️ **Nessun messaggio di spam impostato.**")
 
-    if spam_custom_messages:
-        status_parts.append("✏️ **Messaggi personalizzati per gruppi**:")
-        for group_id, msg in spam_custom_messages.items():
+    # ✏️ Messaggi personalizzati per gruppo
+    if group_messages:
+        status_parts.append("✏️ **Messaggi personalizzati per gruppo**:")
+        for group_id, msg in group_messages.items():
             try:
                 entity = await client.get_entity(group_id)
-                name = entity.username or entity.title or str(group_id)
+                name = entity.title or entity.username or str(group_id)
             except:
                 name = str(group_id)
-            status_parts.append(f"• {name} (ID: {group_id}):\n\n{msg}\n")
+            status_parts.append(f"• {name} (ID: `{group_id}`):\n```\n{msg}\n```")
 
+    # 👥 Gruppi attivi
     if spam_groups:
         status_parts.append("👥 **Gruppi attivi in spam**:")
         for group_id in spam_groups:
             try:
                 entity = await client.get_entity(group_id)
-                name = entity.username or entity.title or str(group_id)
+                name = entity.title or entity.username or str(group_id)
             except:
                 name = str(group_id)
             status_parts.append(f"• {name}")
     else:
         status_parts.append("👥 **Gruppi attivi in spam**: Nessuno")
 
+    # 📤 Invio messaggio formattato a blocchi (Telegram max 4096 chars)
     msg = ""
     for part in status_parts:
         if len(msg) + len(part) + 2 > 4000:
             await event.reply(msg)
             msg = ""
         msg += part + "\n\n"
+
     if msg:
         await event.reply(msg)
 
