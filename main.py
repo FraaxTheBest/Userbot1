@@ -82,7 +82,7 @@ async def spam_timer_loop():
         await asyncio.sleep(60)
 
 async def send_spam():
-    global is_spamming, spam_message, spam_messages_random, spam_groups, min_delay, max_delay, next_group_name, next_spam_in, spam_counter, global spam_counter
+    global is_spamming, spam_message, spam_messages_random, spam_groups, min_delay, max_delay, next_group_name, next_spam_in, spam_counter
 
     while is_spamming:
         if not spam_groups:
