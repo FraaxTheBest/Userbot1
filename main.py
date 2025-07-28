@@ -158,7 +158,6 @@ async def send_spam():
             except:
                 name = str(group_id)
             status_parts.append(f\"\"\"• {name} (ID: {group_id}):\\n\\n{msg}\\n\"\"\")
-
     if spam_groups:
         status_parts.append("👥 **Gruppi attivi in spam**:")
         for group_id in spam_groups:
