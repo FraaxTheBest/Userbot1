@@ -120,9 +120,9 @@ async def send_spam():
                 print(f"❌ Errore su {group_id}: {e}")
                 continue
                 @client.on(events.NewMessage(pattern=r"^\\.status\\b"))
-    async def handler_status(event):
-    global spam_mode, start_hour, end_hour, spam_message, group_messages, spam_groups
-    global spam_counter, spam_started_at, is_spamming
+                async def handler_status(event):
+                    global spam_mode, start_hour, end_hour, spam_message, group_messages, spam_groups
+                    global spam_counter, spam_started_at, is_spamming
 
     def format_time(dt):
         return dt.strftime("%H:%M") if dt else "N/D"
