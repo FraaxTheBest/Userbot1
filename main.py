@@ -136,8 +136,8 @@ async def handler_status(event):
     global spam_counter, spam_started_at, is_spamming
 
     def format_time(dt):
-    if not dt:
-        return "N/D"
+       if not dt:
+           return "N/D"
     tz = pytz.timezone("Europe/Rome")
     return dt.astimezone(tz).strftime("%H:%M")
 
