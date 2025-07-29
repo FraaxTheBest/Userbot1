@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from telethon.tl.types import Channel
 from telethon.tl.functions.messages import GetDialogFiltersRequest
 from dotenv import load_dotenv
+import pytz
 
 group_messages = {}
 media_path = None
@@ -63,23 +64,26 @@ spam_timer_active = False
 client = TelegramClient('user.session', API_ID, API_HASH)
 
 async def spam_timer_loop():
-    global is_spamming
+    global is_spamming, spam_started_at
     while spam_timer_active:
-        now = datetime.now()
-        current_hour = now.hour
-        
-        if start_hour <= current_hour < end_hour:
-            if not is_spamming:
-                is_spamming = True
-                spam_started_at = datetime.now()
-                asyncio.create_task(send_spam())
-                print("🔄 Spam automatico avviato")
-        else:
-            if is_spamming:
-                is_spamming = False
-                print("🛑 Spam automatico fermato")
-        
-        await asyncio.sleep(60)
+        try:
+            now = datetime.now(pytz.timezone("Europe/Rome"))
+            current_hour = now.hour
+            if start_hour is not None and end_hour is not None:
+                if start_hour <= current_hour < end_hour:
+                    if not is_spamming:
+                        is_spamming = True
+                        spam_started_at = now
+                        asyncio.create_task(send_spam())
+                        print("🔄 Spam automatico avviato")
+                else:
+                    if is_spamming:
+                        is_spamming = False
+                        print("🛑 Spam automatico fermato")
+            await asyncio.sleep(60)
+        except Exception as e:
+            print(f"Errore timer: {e}")
+            await asyncio.sleep(60)
 
 async def send_spam():
     global is_spamming, spam_message, spam_messages_random, spam_groups, min_delay, max_delay, next_group_name, next_spam_in, spam_counter
@@ -132,7 +136,10 @@ async def handler_status(event):
     global spam_counter, spam_started_at, is_spamming
 
     def format_time(dt):
-        return dt.strftime("%H:%M") if dt else "N/D"
+    if not dt:
+        return "N/D"
+    tz = pytz.timezone("Europe/Rome")
+    return dt.astimezone(tz).strftime("%H:%M")
 
     status_parts = []
 
@@ -143,11 +150,11 @@ async def handler_status(event):
             status_parts.append(f"🕒 *Orari spam*: dalle {start_hour:02d}:00 alle {end_hour:02d}:00")
         else:
             status_parts.append("🕒 *Orari spam*: Non impostati")
-        status_parts.append(f"🕒 *Avviato automaticamente alle: {format_time(spam_started_at)}" if spam_started_at else "🕒 **Avvio*: N/D")
-    else:
-        status_parts.append("🧰 *Modalità spam*: Manuale")
-        status_parts.append(f"🕒 *Inizio spam: {format_time(spam_started_at)}" if spam_started_at else "🕒 **Inizio spam*: N/D")
-
+            status_parts.append(f"🕒 *Avviato automaticamente alle*: {format_time(spam_started_at)}" if spam_started_at else "🕒 **Avvio**: N/D")
+        else:
+            status_parts.append("🧰 *Modalità spam*: Manuale")
+            status_parts.append(f"🕒 *Inizio spam*: {format_time(spam_started_at)}" if spam_started_at else "🕒 **Inizio spam**: N/D")
+            
     # 📡 Stato
     stato = "✅ *Attivo" if is_spamming else "❌ **Non attivo*"
     status_parts.append(f"📡 *Stato attuale*: {stato}")
@@ -279,6 +286,8 @@ async def handler_settime(event):
 async def stop_timer(event):
     global spam_timer_active
     spam_timer_active = False
+    global spam_mode    
+    spam_mode = "manuale"
     await event.reply("⏹ Timer automatico disattivato. Lo spam non verrà più attivato in base all'orario.")
 
 @client.on(events.NewMessage(pattern=r'\.dev'))
