@@ -516,6 +516,6 @@ async def main():
             await asyncio.sleep(30)
             continue
 
-if __name__ == '_main_':
+if __name__ == '__main__':
     print("Avvio del bot...")
     asyncio.run(main())
