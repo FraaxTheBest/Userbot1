@@ -150,11 +150,10 @@ async def handler_status(event):
             status_parts.append(f"🕒 *Orari spam*: dalle {start_hour:02d}:00 alle {end_hour:02d}:00")
         else:
             status_parts.append("🕒 *Orari spam*: Non impostati")
-        status_parts.append(f"🕒 *Avviato automaticamente alle*: {format_time(spam_started_at)}" if spam_started_at else "🕒 **Avvio**: N/D")
+            status_parts.append(f"🕒 *Avviato automaticamente alle*: {format_time(spam_started_at)}" if spam_started_at else "🕒 *Avvio*: N/D")
     else:
         status_parts.append("🧰 *Modalità spam*: Manuale")
-        status_parts.append(f"🕒 *Inizio spam*: {format_time(spam_started_at)}" if spam_started_at else "🕒 **Inizio spam**: N/D")
-
+        status_parts.append(f"🕒 *Inizio spam*: {format_time(spam_started_at)}" if spam_started_at else "🕒 *Inizio spam*: N/D")
     # 📡 Stato
     stato = "✅ *Attivo*" if is_spamming else "❌ *Non attivo*"
     status_parts.append(f"📡 *Stato attuale*: {stato}")
