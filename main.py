@@ -546,7 +546,24 @@ async def watchdog():
             print(f"❌ Errore nel watchdog: {e}")
 
         await asyncio.sleep(600)  # Controllo ogni 10 minuti
+async def main():
+    while True:
+        try:
+            print("Avvio bot...")
+            await client.start(phone=PHONE, password=PASSWORD)
+            print("Bot avviato con successo!")
 
+            # Avvia il watchdog e l'auto-ping
+            asyncio.create_task(watchdog())
+            asyncio.create_task(auto_ping())
+
+            await client.run_until_disconnected()
+
+        except Exception as e:
+            print(f"Errore di connessione: {str(e)}")
+            print("Riconnessione tra 30 secondi...")
+            await asyncio.sleep(30)
+            continue
 
 if __name__ == '__main__':
     print("Avvio del bot...")
