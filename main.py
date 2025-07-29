@@ -523,18 +523,30 @@ async def set_message_with_media(event):
     lines = spam_message.count('\n') + 1 if spam_message else 0
     await event.respond(f"✅ Messaggio {media_type} impostato.\n🎯 Modalità: SINGOLO\n🧾 Righe: {lines}")
 
-async def main():
+async def auto_ping():
     while True:
         try:
-            print("Avvio bot...")
-            await client.start(phone=PHONE, password=PASSWORD)
-            print("Bot avviato con successo!")
-            await client.run_until_disconnected()
+            await asyncio.sleep(2 * 60 * 60)  # Ogni 2 ore
+            await client.send_message("me", ".status")
+            print("📡 Auto-ping inviato a Messaggi Salvati")
         except Exception as e:
-            print(f"Errore di connessione: {str(e)}")
-            print("Riconnessione tra 30 secondi...")
-            await asyncio.sleep(30)
-            continue
+            print(f"❌ Errore durante auto-ping: {e}")
+
+async def watchdog():
+    while True:
+        try:
+            if not await client.is_user_authorized():
+                print("⚠ Rilevato logout. Tentativo di riconnessione...")
+                await client.start(phone=PHONE, password=PASSWORD)
+                print("✅ Re-login eseguito con successo.")
+
+            await client.send_message("me", "📡 Watchdog: controllo connessione...")
+            print("📡 Watchdog attivo: connessione OK.")
+        except Exception as e:
+            print(f"❌ Errore nel watchdog: {e}")
+
+        await asyncio.sleep(600)  # Controllo ogni 10 minuti
+
 
 if __name__ == '__main__':
     print("Avvio del bot...")
