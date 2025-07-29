@@ -136,10 +136,10 @@ async def handler_status(event):
     global spam_counter, spam_started_at, is_spamming
 
     def format_time(dt):
-       if not dt:
-           return "N/D"
-    tz = pytz.timezone("Europe/Rome")
-    return dt.astimezone(tz).strftime("%H:%M")
+        if not dt:
+            return "N/D"
+        tz = pytz.timezone("Europe/Rome")
+        return dt.astimezone(tz).strftime("%H:%M")
 
     status_parts = []
 
@@ -150,13 +150,13 @@ async def handler_status(event):
             status_parts.append(f"🕒 *Orari spam*: dalle {start_hour:02d}:00 alle {end_hour:02d}:00")
         else:
             status_parts.append("🕒 *Orari spam*: Non impostati")
-            status_parts.append(f"🕒 *Avviato automaticamente alle*: {format_time(spam_started_at)}" if spam_started_at else "🕒 **Avvio**: N/D")
-        else:
-            status_parts.append("🧰 *Modalità spam*: Manuale")
-            status_parts.append(f"🕒 *Inizio spam*: {format_time(spam_started_at)}" if spam_started_at else "🕒 **Inizio spam**: N/D")
-            
+        status_parts.append(f"🕒 *Avviato automaticamente alle*: {format_time(spam_started_at)}" if spam_started_at else "🕒 **Avvio**: N/D")
+    else:
+        status_parts.append("🧰 *Modalità spam*: Manuale")
+        status_parts.append(f"🕒 *Inizio spam*: {format_time(spam_started_at)}" if spam_started_at else "🕒 **Inizio spam**: N/D")
+
     # 📡 Stato
-    stato = "✅ *Attivo" if is_spamming else "❌ **Non attivo*"
+    stato = "✅ *Attivo*" if is_spamming else "❌ *Non attivo*"
     status_parts.append(f"📡 *Stato attuale*: {stato}")
 
     # 📬 Messaggi inviati
@@ -192,7 +192,7 @@ async def handler_status(event):
     else:
         status_parts.append("👥 *Gruppi attivi in spam*: Nessuno")
 
-    # 📤 Invio messaggio formattato a blocchi (Telegram max 4096 chars)
+    # 📤 Invio messaggio formattato a blocchi
     msg = ""
     for part in status_parts:
         if len(msg) + len(part) + 2 > 4000:
