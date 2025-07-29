@@ -355,14 +355,25 @@ async def list_chats(event):
 @client.on(events.NewMessage(pattern=r'\.start'))
 async def start_spam(event):
     global is_spamming, spam_started_at, spam_mode
+    tz = pytz.timezone("Europe/Rome")
+    now = datetime.now(tz)
+    
     if not is_spamming:
-        is_spamming = True
-        spam_started_at = datetime.now()
-        if spam_mode == "manuale":
-            asyncio.create_task(send_spam())
-            await event.respond("Spam avviato.")
+        if spam_mode == "automatica":
+            if start_hour is not None and end_hour is not None and start_hour <= now.hour < end_hour:
+                is_spamming = True
+                spam_started_at = now
+                asyncio.create_task(send_spam())
+                await event.respond("✅ Spam automatico avviato (orario valido).")
+            else:
+                await event.respond("⚠ Modalità automatica attiva ma fuori orario. Usa `.settime` o attendi la fascia oraria.")
         else:
-            await event.respond("⚠ Modalità automatica attiva - usa .settime per modificare")
+            is_spamming = True
+            spam_started_at = now
+            asyncio.create_task(send_spam())
+            await event.respond("✅ Spam avviato (manuale).")
+    else:
+        await event.respond("⚠ Spam già attivo.")
 
 @client.on(events.NewMessage(pattern=r'\.stop'))
 async def stop_spam(event):
