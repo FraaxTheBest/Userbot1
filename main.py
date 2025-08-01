@@ -533,26 +533,25 @@ async def set_message_with_media(event):
 async def auto_ping():
     while True:
         try:
-            await asyncio.sleep(2 * 60 * 60)  # Ogni 2 ore
+            await asyncio.sleep(1800)
+            print("📡 Inviando .status...")
             await client.send_message("me", ".status")
-            print("📡 Auto-ping inviato a Messaggi Salvati")
         except Exception as e:
-            print(f"❌ Errore durante auto-ping: {e}")
+            print(f"❌ Errore auto-ping: {e}")
+
 
 async def watchdog():
     while True:
         try:
             if not await client.is_user_authorized():
-                print("⚠ Rilevato logout. Tentativo di riconnessione...")
+                print("⚠ Logout rilevato, riconnessione...")
                 await client.start(phone=PHONE, password=PASSWORD)
-                print("✅ Re-login eseguito con successo.")
-
-            await client.send_message("me", "📡 Watchdog: controllo connessione...")
-            print("📡 Watchdog attivo: connessione OK.")
+            else:
+                print("📡 Watchdog attivo")
         except Exception as e:
-            print(f"❌ Errore nel watchdog: {e}")
+            print(f"❌ Errore watchdog: {e}")
+        await asyncio.sleep(3600)  # 1 ora
 
-        await asyncio.sleep(600)  # Controllo ogni 10 minuti
 async def main():
     while True:
         try:
