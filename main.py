@@ -301,7 +301,7 @@ async def stop_timer(event):
 async def show_developer(event):
     await event.respond("Lo sviluppatore del userbot è @ASTROMOONEY")
 
-@client.on(events.NewMessage(pattern=r'\.help'))
+@client.on(events.NewMessage(from_users='me', pattern=r'^\.help$'))
 async def show_help(event):
     help_text = (
         "🌟 Benvenuto nel tuo Spambot!\n"
@@ -533,8 +533,8 @@ async def set_message_with_media(event):
 async def auto_ping():
     while True:
         try:
-            await asyncio.sleep(1800)
-            print("📡 Inviando .status...")
+            await asyncio.sleep(1800)  # 30 minuti
+            print("📡 Auto-ping: invio .status")
             await client.send_message("me", ".status")
         except Exception as e:
             print(f"❌ Errore auto-ping: {e}")
@@ -547,7 +547,7 @@ async def watchdog():
                 print("⚠ Logout rilevato, riconnessione...")
                 await client.start(phone=PHONE, password=PASSWORD)
             else:
-                print("📡 Watchdog attivo")
+                print("📡 Watchdog: connessione OK")
         except Exception as e:
             print(f"❌ Errore watchdog: {e}")
         await asyncio.sleep(3600)  # 1 ora
